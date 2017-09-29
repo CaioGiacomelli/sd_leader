@@ -26,7 +26,7 @@ def send_request(pro, type):
 
     if type == 2 or type == 3 or type == 4:
         tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if type == 4:
+        if type == 4 or type == 3:
             tcp.connect((host, p[pro - 1].port))
             m1 = message.Message(pro, type)
         else:
@@ -34,7 +34,7 @@ def send_request(pro, type):
             m1 = message.Message(pro.pid, type)
         m_dumped = pickle.dumps(m1)
         x = tcp.send(m_dumped)
-        print(x)
+
         tcp.close()
 
 
@@ -117,15 +117,16 @@ class Process:
 
         while True:
 
-
                 try:
-                    tcp.settimeout(3)
+                    tcp.settimeout(10)
                     con, cliente = self.tcp_accept(tcp)
                 except socket.timeout:
                     if self.sender:
+                        self.sender = 0
                         thread4 = MyThread(self, 0)
                         thread4.start()
                     if self.candidato:
+                        self.candidato = 0
                         thread5 = MyThread(self, 1)
                         thread5.start()
                 except:
@@ -135,7 +136,6 @@ class Process:
                     if not self.failed:
 
                         while True:
-                            print(self.failed, self.pid)
                             msg = con.recv(1024)
                             if msg:
                                 msg_loaded = pickle.loads(msg)
@@ -148,17 +148,24 @@ class Process:
 
                         if new_m.type == 0:
                             if new_m.pid < self.pid:
+                                thread7 = MyThread(new_m.pid, 3)
+                                thread7.start()
+
+                                #########################
+
                                 thread3 = MyThread(self, 0)
                                 thread3.start()
                                 self.candidato = 1
-
                         elif new_m.type == 1:
                                 self.lider = new_m.pid
                                 print("Eu processo ", self.pid, " concordo em ser liderado pelo processo ", self.lider)
                         elif new_m.type == 2:
+                                thread6 = MyThread(new_m.pid, 4)
+                                thread6.start()
                                 print("Lider recebeu a mensagem do processo ", new_m.pid)
 
                         elif new_m.type == 3:
+                                self.candidato = 0
                                 print("Recebeu a mensagem OK do processo ", new_m.pid)
 
                         elif new_m.type == 4:
@@ -179,10 +186,9 @@ for proc in p:
     proc.set_process_list(p)
 
 
-
-
 print("1 - Enviar Mensagem")
 print("2 - Sair")
+print("3 - Falhar líder")
 option = input()
 
 while True:
@@ -202,6 +208,7 @@ while True:
 
     print("1 - Enviar Mensagem")
     print("2 - Sair")
+    print("3 - Falhar líder")
     option = input()
 
 
