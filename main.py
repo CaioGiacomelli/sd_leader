@@ -92,6 +92,7 @@ class Process:
         self.failed = 0
         self.candidato = 0
         self.sender = 0
+        self.sender2 = 0
         self.process_list = []
         self.host = host
         self.port = port
@@ -103,6 +104,12 @@ class Process:
 
     def set_failed(self, failed):
         self.failed = failed
+
+    def set_alive(self):
+        self.failed = 0
+        thread10 = MyThread(self, 0)
+        thread10.start()
+        self.candidato = 1
 
 
     def tcp_accept(self, tcp):
@@ -159,22 +166,30 @@ class Process:
                         elif new_m.type == 1:
                                 self.lider = new_m.pid
                                 print("Eu processo ", self.pid, " concordo em ser liderado pelo processo ", self.lider)
+                                # # print(self.sender)
+                                time.sleep(5)
+                                if self.sender2:
+                                    print("ERROU")
+                                    thread11 = MyThread(self, 2)
+                                    thread11.start()
                         elif new_m.type == 2:
                                 thread6 = MyThread(new_m.pid, 4)
                                 thread6.start()
-                                print("Lider recebeu a mensagem do processo ", new_m.pid)
+                                print("Lider ", self.lider, " recebeu a mensagem do processo ", new_m.pid)
+
 
                         elif new_m.type == 3:
                                 self.candidato = 0
-                                print("Recebeu a mensagem OK do processo ", new_m.pid)
+                                print("Mensagem OK entregue para", self.pid)
 
                         elif new_m.type == 4:
                                 self.sender = 0
+                                self.sender2 = 0
 
 
 
 
-host = '192.168.0.105'
+host = '192.168.0.101'
 process_number = 1
 p = [Process(process_number, host, 5000),
      Process(process_number + 1, host, 5001),
@@ -189,6 +204,7 @@ for proc in p:
 print("1 - Enviar Mensagem")
 print("2 - Sair")
 print("3 - Falhar líder")
+print("4 - Recuperar processo")
 option = input()
 
 while True:
@@ -198,17 +214,23 @@ while True:
         print("Qual processo enviará a mensagem?")
         sender = int(input())
         p[sender-1].sender = 1
+        p[sender - 1].sender2 = 1
         thread1 = MyThread(p[sender-1], 2)
         thread1.start()
     if option == '3':
-        p[4].set_failed(1)
-
+        p[p[0].lider - 1].set_failed(1)
+        print("Líder ", p[0].lider, " falhou")
+    if option == '4':
+        print("Digite o processo que deseja recuperar")
+        sender = int(input())
+        p[sender-1].set_alive()
     elif option == '2':
         os._exit(0)
 
     print("1 - Enviar Mensagem")
     print("2 - Sair")
     print("3 - Falhar líder")
+    print("4 - Recuperar processo")
     option = input()
 
 
